@@ -1,7 +1,5 @@
 #include "init.h"
 
-#include <std_msgs/String.h>
-
 #include "../linktrack/protocols.h"
 #include "nlink_protocol.h"
 #include "nlink_unpack/nlink_linktrack_aoa_nodeframe0.h"
@@ -32,12 +30,12 @@ void NLTAoa_ProtocolNodeFrame0::UnpackFrameData(const uint8_t *data)
 namespace linktrack_aoa
 {
 
-  nlink_parser::LinktrackNodeframe0 g_msg_nodeframe0;
-  nlink_parser::LinktrackAoaNodeframe0 g_msg_aoa_nodeframe0;
+  nlink_parser_ros2_interfaces::msg::LinktrackNodeframe0 g_msg_nodeframe0;
+  nlink_parser_ros2_interfaces::msg::LinktrackAoaNodeframe0 g_msg_aoa_nodeframe0;
 
   static serial::Serial *g_serial;
 
-  Init::Init(NProtocolExtracter *protocol_extraction, serial::Serial *serial)
+  Init::Init(NProtocolExtracter *protocol_extraction, serial::Serial *serial) : Node("linktrack_aoa_ros2")
   {
     g_serial = serial;
     initDataTransmission();
@@ -45,7 +43,7 @@ namespace linktrack_aoa
     InitAoaNodeFrame0(protocol_extraction);
   }
 
-  static void DTCallback(const std_msgs::String::ConstPtr &msg)
+  static void DTCallback(const std_msgs::msg::String::SharedPtr msg)
   {
     if (g_serial)
       g_serial->write(msg->data);
@@ -54,7 +52,7 @@ namespace linktrack_aoa
   void Init::initDataTransmission()
   {
     dt_sub_ =
-        nh_.subscribe("nlink_linktrack_data_transmission", 1000, DTCallback);
+        create_subscription<std_msgs::msg::String>("nlink_linktrack_data_transmission", 1000, DTCallback);
   }
 
   void Init::initNodeFrame0(NProtocolExtracter *protocol_extraction)
@@ -65,8 +63,9 @@ namespace linktrack_aoa
       if (!publishers_[protocol])
       {
         auto topic = "nlink_linktrack_nodeframe0";
+        rclcpp::QoS qos(rclcpp::KeepLast(200));
         publishers_[protocol] =
-            nh_.advertise<nlink_parser::LinktrackNodeframe0>(topic, 200);
+            create_publisher<nlink_parser_ros2_interfaces::msg::LinktrackNodeframe0>(topic, qos);
         TopicAdvertisedTip(topic);
         ;
       }
@@ -88,7 +87,7 @@ namespace linktrack_aoa
         memcpy(msg_node.data.data(), node->data, node->data_length);
       }
 
-      publishers_.at(protocol).publish(msg_data);
+      publishers_.at(protocol)->publish(msg_data);
     });
   }
 
@@ -100,8 +99,9 @@ namespace linktrack_aoa
       if (!publishers_[protocol])
       {
         auto topic = "nlink_linktrack_aoa_nodeframe0";
-        publishers_[protocol] =
-            nh_.advertise<nlink_parser::LinktrackAoaNodeframe0>(topic, 200);
+        rclcpp::QoS qos(rclcpp::KeepLast(200));
+        publishers_aoa_[protocol] =
+            create_publisher<nlink_parser_ros2_interfaces::msg::LinktrackAoaNodeframe0>(topic, qos);
         TopicAdvertisedTip(topic);
       }
       const auto &data = g_nltaoa_nodeframe0.result;
@@ -127,7 +127,7 @@ namespace linktrack_aoa
         msg_node.rx_rssi = node->rx_rssi;
       }
 
-      publishers_.at(protocol).publish(msg_data);
+      publishers_aoa_.at(protocol)->publish(msg_data);
     });
   }
 

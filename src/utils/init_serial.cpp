@@ -1,6 +1,6 @@
 #include "init_serial.h"
 
-#include <ros/ros.h>
+#include "rclcpp/rclcpp.hpp"
 
 #include <string>
 /*
@@ -22,13 +22,16 @@ void initSerial(serial::Serial *serial)
 {
   try
   {
-    auto port_name =
-        ros::param::param<std::string>("~port_name", "/dev/ttyUSB0");
-    auto baud_rate = ros::param::param<int>("~baud_rate", 921600);
+    auto port_name = "/dev/ttyUSB0";
+        // ros::param::param<std::string>("~port_name", "/dev/ttyUSB0");
+
+    auto baud_rate = 921600;
+            // ros::param::param<int>("~baud_rate", 921600);
 
     serial->setPort(port_name);
     serial->setBaudrate(static_cast<uint32_t>(baud_rate));
-    ROS_INFO("try to open serial port with %s,%d", port_name.data(), baud_rate);
+    // RCLCPP_INFO("try to open serial port with %s,%d", port_name.data(), baud_rate);
+    std::cout<< "try to open serial port with port: " << port_name << " baud rate: "<< baud_rate << std::endl;
     auto timeout = serial::Timeout::simpleTimeout(10);
     // without setTimeout,serial can not write any data
     // https://stackoverflow.com/questions/52048670/can-read-but-cannot-write-serial-ports-on-ubuntu-16-04/52051660?noredirect=1#comment91056825_52051660
@@ -37,17 +40,19 @@ void initSerial(serial::Serial *serial)
 
     if (serial->isOpen())
     {
-      ROS_INFO("Serial port opened successfully, waiting for data.");
+      std::cout<< "Serial port opened successfully, waiting for data."<<std::endl;
     }
     else
     {
-      ROS_ERROR("Failed to open serial port, please check and retry.");
+      // RCLCPP_ERROR("Failed to open serial port, please check and retry.");
+      std::cout<< "Failed to open serial port, please check and retry."<<std::endl;
       exit(EXIT_FAILURE);
     }
   }
   catch (const std::exception &e)
   {
-    ROS_ERROR("Unhandled Exception: %s", e.what());
+    // RCLCPP_ERROR("Unhandled Exception: %s", e.what());
+    std::cout<< "Unhandled Exception"<<e.what()<<std::endl;
     exit(EXIT_FAILURE);
   }
 }

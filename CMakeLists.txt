@@ -1,69 +1,17 @@
-cmake_minimum_required(VERSION 2.8.3)
-project(nlink_parser)
+cmake_minimum_required(VERSION 3.5.0)
+project(nlink_parser_ros2)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 #add_compile_options(-std=c++11)
-add_definitions(-std=c++11)
+add_definitions(-std=c++14)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
-    roscpp
-    std_msgs
-    message_generation
-    )
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nlink_parser_ros2_interfaces REQUIRED)
+find_package(serial REQUIRED)
 
-## Generate messages in the 'msg' folder
-add_message_files(
-    FILES
-    LinktrackAnchorframe0.msg
-    LinktrackNode0.msg
-    LinktrackNode1.msg
-    LinktrackNode2.msg
-    LinktrackNodeframe0.msg
-    LinktrackNodeframe1.msg
-    LinktrackNodeframe2.msg
-    LinktrackNodeframe3.msg
-    LinktrackTag.msg
-    LinktrackTagframe0.msg
-    TofsenseCascade.msg
-    TofsenseFrame0.msg
-    LinktrackAoaNode0.msg
-    LinktrackAoaNodeframe0.msg
-
-    LinktrackNode5.msg
-    LinktrackNodeframe5.msg
-    LinktrackNode6.msg
-    LinktrackNodeframe6.msg
-    )
-
-## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
-
-## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
-
-## Generate added messages and services with any dependencies listed here
-generate_messages(
-    DEPENDENCIES
-    std_msgs
-    )
-
-catkin_package(
-    #  INCLUDE_DIRS include
-    #  LIBRARIES nlink
-    CATKIN_DEPENDS message_runtime
-    #  DEPENDS system_lib
-    )
 
 ###########
 ## Build ##
@@ -71,11 +19,14 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(
-    include
-    ${catkin_INCLUDE_DIRS}
+include(GNUInstallDirs)
+
+include_directories(include 
     src/utils
+    ${serial_INCLUDE_DIRS}
+    include
     )
+
 
 set(nutils "nutils")
 add_library(${nutils}
@@ -97,41 +48,70 @@ add_library(${nutils}
     src/utils/nutils.cpp
 )
 target_link_libraries(${nutils}
-  ${catkin_LIBRARIES}
-  serial
+  serial::serial
+  rclcpp::rclcpp
 )
 
-set(LINKTRACK_NAME "linktrack")
-add_executable(${LINKTRACK_NAME}
-    src/linktrack/init.cpp
-    src/linktrack/main.cpp
-    src/linktrack/protocols.cpp
-    )
-target_link_libraries(${LINKTRACK_NAME}
-#    ${catkin_LIBRARIES}
-    ${nutils}
-    )
-add_dependencies(${LINKTRACK_NAME} ${PROJECT_NAME}_generate_messages_cpp)
+# target_include_directories(${nutils} PUBLIC
+#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#   $<INSTALL_INTERFACE:include>)
 
-set(LINKTRACK_RVIZ_NAME "linktrack_rviz_converter")
-add_executable(${LINKTRACK_RVIZ_NAME}
-    src/linktrack/main_rviz_converter.cpp
-    )
-target_link_libraries(${LINKTRACK_RVIZ_NAME}
-    ${nutils}
-    )
-add_dependencies(${LINKTRACK_RVIZ_NAME} ${PROJECT_NAME}_generate_messages_cpp)
+ament_target_dependencies(${nutils}
+  "rclcpp"
+  "nlink_parser_ros2_interfaces"
+  "std_msgs"
+  "geometry_msgs"
+)
 
-set(TOFSENSE_NAME "tofsense")
-add_executable(${TOFSENSE_NAME}
-    src/tofsense/init.cpp
-    src/tofsense/main.cpp
-    )
-target_link_libraries(${TOFSENSE_NAME}
-#    ${catkin_LIBRARIES}
-    ${nutils}
-    )
-add_dependencies(${TOFSENSE_NAME} ${PROJECT_NAME}_generate_messages_cpp)
+# set(LINKTRACK_NAME "linktrack")
+# add_executable(${LINKTRACK_NAME}
+#     src/linktrack/init.cpp
+#     src/linktrack/main.cpp
+#     src/linktrack/protocols.cpp
+#     )
+# target_link_libraries(${LINKTRACK_NAME}
+# #    ${catkin_LIBRARIES}
+#     ${nutils}
+#     )
+# rosidl_target_interfaces(${LINKTRACK_NAME} ${PROJECT_NAME} "rosidl_typesupport_cpp")
+# ament_target_dependencies(${LINKTRACK_NAME}
+#       "rclcpp"
+#     #   "rclcpp_action"
+#     )
+#add_dependencies(${LINKTRACK_NAME} ${PROJECT_NAME}_generate_messages_cpp)
+
+# set(LINKTRACK_RVIZ_NAME "linktrack_rviz_converter")
+# add_executable(${LINKTRACK_RVIZ_NAME}
+#     src/linktrack/main_rviz_converter.cpp
+#     )
+# target_link_libraries(${LINKTRACK_RVIZ_NAME}
+#     ${nutils}
+#     rclcpp
+#     )
+# # add_dependencies(${LINKTRACK_RVIZ_NAME} ${PROJECT_NAME}_generate_messages_cpp)
+# # rosidl_target_interfaces(${LINKTRACK_RVIZ_NAME} ${PROJECT_NAME} "rosidl_typesupport_cpp")
+# ament_target_dependencies(${LINKTRACK_RVIZ_NAME}
+#       rclcpp
+#       nlink_parser_ros2_interfaces
+#       std_msgs
+#       geometry_msgs
+#     )
+
+# set(TOFSENSE_NAME "tofsense")
+# add_executable(${TOFSENSE_NAME}
+#     src/tofsense/init.cpp
+#     src/tofsense/main.cpp
+#     )
+# target_link_libraries(${TOFSENSE_NAME}
+# #    ${catkin_LIBRARIES}
+#     ${nutils}
+#     )
+# add_dependencies(${TOFSENSE_NAME} ${PROJECT_NAME}_generate_messages_cpp)
+# rosidl_target_interfaces(${TOFSENSE_NAME} ${PROJECT_NAME} "rosidl_typesupport_cpp")
+# ament_target_dependencies(${TOFSENSE_NAME}
+#       "rclcpp"
+#     #   "rclcpp_action"
+#     )
 
 set(LINKTRACK_AOA_NAME "linktrack_aoa")
 add_executable(${LINKTRACK_AOA_NAME}
@@ -140,28 +120,59 @@ add_executable(${LINKTRACK_AOA_NAME}
     src/linktrack/protocols.cpp
     )
 target_link_libraries(${LINKTRACK_AOA_NAME}
-#    ${catkin_LIBRARIES}
     ${nutils}
     )
-add_dependencies(${LINKTRACK_AOA_NAME} ${PROJECT_NAME}_generate_messages_cpp)
+  
+# add_dependencies(${LINKTRACK_AOA_NAME} ${PROJECT_NAME}_generate_messages_cpp)
+# rosidl_target_interfaces(${LINKTRACK_AOA_NAME} ${PROJECT_NAME} "rosidl_typesupport_cpp")
+ament_target_dependencies(${LINKTRACK_AOA_NAME}
+      "rclcpp"
+      "nlink_parser_ros2_interfaces"
+      "std_msgs"
+      "geometry_msgs"
+    )
 
 
 #############
 ## Testing ##
 #############
-if(${CATKIN_ENABLE_TESTING})
-    find_package(rostest REQUIRED)
-#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-    ## Add gtest based cpp test target and link libraries
-    catkin_add_gtest(${PROJECT_NAME}-test
-        src/linktrack/init.cpp
-        src/linktrack/protocols.cpp
-        src/tofsense/init.cpp
-        src/linktrack_aoa/init.cpp
-        test/test_nlink_parser.cpp
-        )
-endif()
+# if(${CATKIN_ENABLE_TESTING})
+#     find_package(rostest REQUIRED)
+# #    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+#     ## Add gtest based cpp test target and link libraries
+#     catkin_add_gtest(${PROJECT_NAME}-test
+#         src/linktrack/init.cpp
+#         src/linktrack/protocols.cpp
+#         src/tofsense/init.cpp
+#         src/linktrack_aoa/init.cpp
+#         test/test_nlink_parser.cpp
+#         )
+# endif()
 
-if(TARGET ${PROJECT_NAME}-test)
-    target_link_libraries(${PROJECT_NAME}-test  ${nutils})
-endif()
+# if(TARGET ${PROJECT_NAME}-test)
+#     target_link_libraries(${PROJECT_NAME}-test  ${nutils})
+# endif()
+
+install(TARGETS
+${LINKTRACK_AOA_NAME} 
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)
+
+install(
+  TARGETS
+  ${LINKTRACK_AOA_NAME} 
+    DESTINATION lib/${PROJECT_NAME})
+
+
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
+
+ament_package()
+
