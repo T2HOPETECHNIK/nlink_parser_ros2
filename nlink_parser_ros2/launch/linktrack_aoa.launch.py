@@ -9,7 +9,7 @@ def generate_launch_description():
         executable="linktrack_aoa",
         output="screen",
         # figure this yaml stuff out
-        arguments=["sdf.yaml"]
+        arguments=["linktrack_aoa_init_params.yaml"]
     )
     
     ld.add_action(linktrack_aoa_node)

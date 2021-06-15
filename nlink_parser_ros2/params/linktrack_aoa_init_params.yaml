@@ -1,0 +1,3 @@
+port_config:
+  port_name: "/dev/ttyUSB1"
+  baudrate: "921600"

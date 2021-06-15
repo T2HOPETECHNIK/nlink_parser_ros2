@@ -1,7 +1,9 @@
 #include "init_serial.h"
 #include <yaml-cpp/yaml.h>
+#include <yaml-cpp/exceptions.h>
 #include "rclcpp/rclcpp.hpp"
-
+#include <iostream>
+#include <fstream>
 #include <string>
 /*
 void enumerate_ports() {
@@ -40,8 +42,7 @@ bool initSerial(serial::Serial *serial, char *param_file_path)
     //   }
     // };
 
-    // auto port_name = "/dev/ttyUSB0";
-    
+     
     if(port_config_dict.find("port_name")==port_config_dict.end() || port_config_dict.find("baudrate")==port_config_dict.end()){
       std::cout<< "Failed to get a param please check the config file and retry."<<std::endl;
       exit(EXIT_FAILURE);
@@ -61,10 +62,10 @@ bool initSerial(serial::Serial *serial, char *param_file_path)
       baudrate = search->second;    
     }
         
-    // ros::param::param<int>("~baud_rate", 921600);
+  
     serial->setPort(port_name);
     serial->setBaudrate(static_cast<uint32_t>(std::stoi(baudrate)));
-    // RCLCPP_INFO("try to open serial port with %s,%d", port_name.data(), baud_rate);
+  
     std::cout<< "try to open serial port with port: " << port_name << " baud rate: "<< baudrate << std::endl;
     auto timeout = serial::Timeout::simpleTimeout(10);
     // without setTimeout,serial can not write any data
@@ -74,21 +75,22 @@ bool initSerial(serial::Serial *serial, char *param_file_path)
 
     if (serial->isOpen())
     {
-      std::cout<< "Serial port opened successfully, waiting for data."<<std::endl;
+      std::cout<< "Serial port opened successfully."<<std::endl;
     }
     else
     {
-      // RCLCPP_ERROR("Failed to open serial port, please check and retry.");
       std::cout<< "Failed to open serial port, please check and retry."<<std::endl;
       exit(EXIT_FAILURE);
     }
-      // std::cout<< "init_Serial_done"<<std::endl;
       return true;
+  }
+  catch (const YAML::BadFile &e){
+    std::cout<< "Exception raised: parameter file ["<< param_file_path <<"] missing"<<std::endl;  
+    exit(EXIT_FAILURE);
   }
   catch (const std::exception &e)
   {
-    // RCLCPP_ERROR("Unhandled Exception: %s", e.what());
-    std::cout<< "Unhandled Exception"<<e.what()<<std::endl;
+    std::cout<< "Exception raised : "<<e.what()<<std::endl;
     exit(EXIT_FAILURE);
   }
 }
