@@ -39,7 +39,7 @@ namespace linktrack_aoa
     initNodeFrame0(protocol_extraction);
     InitAoaNodeFrame0(protocol_extraction);
     serial_read_timer_ =  this->create_wall_timer(std::chrono::milliseconds(1000), std::bind(&Init::serialReadTimer, this));
-    RCLCPP_INFO(this->get_logger(),"Initialized Init class");
+    RCLCPP_INFO(this->get_logger(),"Initialized linktrack AoA");
   }
 
   void Init::serialReadTimer(){

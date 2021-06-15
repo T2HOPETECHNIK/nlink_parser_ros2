@@ -49,7 +49,7 @@ bool initSerial(serial::Serial *serial, char *param_file_path)
     std::string port_name, baudrate;
     auto search = port_config_dict.find("port_name");
     if(search==port_config_dict.end()){
-      port_name = "/dev/ttyUSB0";
+      port_name = "/dev/ttyUSB1";
     } else {
       port_name = search->second;
     }

@@ -1,5 +1,3 @@
-#include <rclcpp/rclcpp.hpp>
-
 #include "init.h"
 #include "init_serial.h"
 

@@ -65,22 +65,23 @@ ament_target_dependencies(${nutils}
   "geometry_msgs"
 )
 
-# set(LINKTRACK_NAME "linktrack")
-# add_executable(${LINKTRACK_NAME}
-#     src/linktrack/init.cpp
-#     src/linktrack/main.cpp
-#     src/linktrack/protocols.cpp
-#     )
-# target_link_libraries(${LINKTRACK_NAME}
-# #    ${catkin_LIBRARIES}
-#     ${nutils}
-#     )
+set(LINKTRACK_NAME "linktrack")
+add_executable(${LINKTRACK_NAME}
+    src/linktrack/init.cpp
+    src/linktrack/main.cpp
+    src/linktrack/protocols.cpp
+    )
+target_link_libraries(${LINKTRACK_NAME}
+   ${catkin_LIBRARIES}
+    ${nutils}
+    )
 # rosidl_target_interfaces(${LINKTRACK_NAME} ${PROJECT_NAME} "rosidl_typesupport_cpp")
-# ament_target_dependencies(${LINKTRACK_NAME}
-#       "rclcpp"
-#     #   "rclcpp_action"
-#     )
-#add_dependencies(${LINKTRACK_NAME} ${PROJECT_NAME}_generate_messages_cpp)
+ament_target_dependencies(${LINKTRACK_NAME}
+  "rclcpp"
+  "nlink_parser_ros2_interfaces"
+  "std_msgs"
+)
+# add_dependencies(${LINKTRACK_NAME} ${PROJECT_NAME}_generate_messages_cpp)
 
 # set(LINKTRACK_RVIZ_NAME "linktrack_rviz_converter")
 # add_executable(${LINKTRACK_RVIZ_NAME}
@@ -171,6 +172,7 @@ ament_target_dependencies(nlink_viz_ros2
 
 install(TARGETS
 ${LINKTRACK_AOA_NAME} 
+${LINKTRACK_NAME}
 nlink_viz_ros2
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -179,6 +181,7 @@ nlink_viz_ros2
 install(
   TARGETS
   ${LINKTRACK_AOA_NAME} 
+  ${LINKTRACK_NAME}
   nlink_viz_ros2
     DESTINATION lib/${PROJECT_NAME})
 
