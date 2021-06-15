@@ -1,7 +1,5 @@
 #include "init.h"
 
-#include "../linktrack/protocols.h"
-#include "nlink_protocol.h"
 #include "nlink_unpack/nlink_linktrack_aoa_nodeframe0.h"
 #include "nlink_unpack/nlink_linktrack_nodeframe0.h"
 #include "nutils.h"
@@ -33,26 +31,35 @@ namespace linktrack_aoa
   nlink_parser_ros2_interfaces::msg::LinktrackNodeframe0 g_msg_nodeframe0;
   nlink_parser_ros2_interfaces::msg::LinktrackAoaNodeframe0 g_msg_aoa_nodeframe0;
 
-  static serial::Serial *g_serial;
-
   Init::Init(NProtocolExtracter *protocol_extraction, serial::Serial *serial) : Node("linktrack_aoa_ros2")
   {
     g_serial = serial;
+    protocol_extraction_ = protocol_extraction;
     initDataTransmission();
     initNodeFrame0(protocol_extraction);
     InitAoaNodeFrame0(protocol_extraction);
+    serial_read_timer_ =  this->create_wall_timer(std::chrono::milliseconds(1000), std::bind(&Init::serialReadTimer, this));
+    RCLCPP_INFO(this->get_logger(),"Initialized Init class");
   }
 
-  static void DTCallback(const std_msgs::msg::String::SharedPtr msg)
-  {
-    if (g_serial)
-      g_serial->write(msg->data);
+  void Init::serialReadTimer(){
+    auto available_bytes = this->g_serial->available();
+    std::string str_received;
+    if (available_bytes)
+    {
+      this->g_serial->read(str_received, available_bytes);
+      this->protocol_extraction_->AddNewData(str_received);
+    }
   }
 
   void Init::initDataTransmission()
   {
+    auto callback = [this](const std_msgs::msg::String::SharedPtr msg) -> void {
+    if (this->g_serial)
+      this->g_serial->write(msg->data);
+    };
     dt_sub_ =
-        create_subscription<std_msgs::msg::String>("nlink_linktrack_data_transmission", 1000, DTCallback);
+        create_subscription<std_msgs::msg::String>("nlink_linktrack_data_transmission", 1000, callback);
   }
 
   void Init::initNodeFrame0(NProtocolExtracter *protocol_extraction)
@@ -67,7 +74,6 @@ namespace linktrack_aoa
         publishers_[protocol] =
             create_publisher<nlink_parser_ros2_interfaces::msg::LinktrackNodeframe0>(topic, qos);
         TopicAdvertisedTip(topic);
-        ;
       }
       const auto &data = g_nlt_nodeframe0.result;
       auto &msg_data = g_msg_nodeframe0;

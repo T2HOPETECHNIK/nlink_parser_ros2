@@ -2,6 +2,6 @@
 #define INITSERIAL_H
 #include <serial/serial.h>
 
-void initSerial(serial::Serial *serial);
+bool initSerial(serial::Serial *serial, char *param_file_path);
 
 #endif // INITSERIAL_H

@@ -11,6 +11,7 @@ find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nlink_parser_ros2_interfaces REQUIRED)
 find_package(serial REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 
 ###########
@@ -50,6 +51,7 @@ add_library(${nutils}
 target_link_libraries(${nutils}
   serial::serial
   rclcpp::rclcpp
+  yaml-cpp
 )
 
 # target_include_directories(${nutils} PUBLIC
@@ -133,6 +135,20 @@ ament_target_dependencies(${LINKTRACK_AOA_NAME}
     )
 
 
+add_executable(nlink_viz_ros2
+    src/aoa_target.cpp
+    )
+target_link_libraries(nlink_viz_ros2
+    ${nutils}
+    )
+
+ament_target_dependencies(nlink_viz_ros2
+  "rclcpp"
+  "nlink_parser_ros2_interfaces"
+  "std_msgs"
+  "geometry_msgs"
+)
+
 #############
 ## Testing ##
 #############
@@ -155,6 +171,7 @@ ament_target_dependencies(${LINKTRACK_AOA_NAME}
 
 install(TARGETS
 ${LINKTRACK_AOA_NAME} 
+nlink_viz_ros2
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
@@ -162,6 +179,7 @@ ${LINKTRACK_AOA_NAME}
 install(
   TARGETS
   ${LINKTRACK_AOA_NAME} 
+  nlink_viz_ros2
     DESTINATION lib/${PROJECT_NAME})
 
 
