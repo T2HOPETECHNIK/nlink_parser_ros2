@@ -11,18 +11,19 @@
 
 namespace linktrack
 {
-  nlink_parser_ros2_interfaces::msg::LinktrackAnchorframe0 g_msg_anchorframe0;
-  nlink_parser_ros2_interfaces::msg::LinktrackTagframe0 g_msg_tagframe0;
-  nlink_parser_ros2_interfaces::msg::LinktrackNodeframe0 g_msg_nodeframe0;
-  nlink_parser_ros2_interfaces::msg::LinktrackNodeframe1 g_msg_nodeframe1;
-  nlink_parser_ros2_interfaces::msg::LinktrackNodeframe2 g_msg_nodeframe2;
-  nlink_parser_ros2_interfaces::msg::LinktrackNodeframe3 g_msg_nodeframe3;
-  nlink_parser_ros2_interfaces::msg::LinktrackNodeframe5 g_msg_nodeframe5;
-  nlink_parser_ros2_interfaces::msg::LinktrackNodeframe6 g_msg_nodeframe6;
+  anchorframe0 g_msg_anchorframe0;
+  tagframe0 g_msg_tagframe0;
+  nodeframe0 g_msg_nodeframe0;
+  nodeframe1 g_msg_nodeframe1;
+  nodeframe2 g_msg_nodeframe2;
+  nodeframe3 g_msg_nodeframe3;
+  nodeframe5 g_msg_nodeframe5;
+  nodeframe6 g_msg_nodeframe6;
 
 
   Init::Init(NProtocolExtracter *protocol_extraction, serial::Serial *serial) : Node("linktrack_ros2")
   {
+    this->declare_parameter("pub_freq", 2.);
     serial_ = serial;
     protocol_extraction_ = protocol_extraction;
     initDataTransmission();
@@ -36,17 +37,31 @@ namespace linktrack
     initNodeFrame6(protocol_extraction);
 
     rclcpp::QoS qos(rclcpp::KeepLast(200));
-    pub_anchor_frame0_= create_publisher<nlink_parser_ros2_interfaces::msg::LinktrackAnchorframe0>("nlink_linktrack_anchorframe0", qos);
-    pub_tag_frame0_= create_publisher<nlink_parser_ros2_interfaces::msg::LinktrackTagframe0>("nlink_linktrack_tagframe0", qos);
-    pub_node_frame0_= create_publisher<nlink_parser_ros2_interfaces::msg::LinktrackNodeframe0>("nlink_linktrack_nodeframe0", qos);
-    pub_node_frame1_= create_publisher<nlink_parser_ros2_interfaces::msg::LinktrackNodeframe1>("nlink_linktrack_nodeframe1", qos);
-    pub_node_frame2_= create_publisher<nlink_parser_ros2_interfaces::msg::LinktrackNodeframe2>("nlink_linktrack_nodeframe2", qos);
-    pub_node_frame3_= create_publisher<nlink_parser_ros2_interfaces::msg::LinktrackNodeframe3>("nlink_linktrack_nodeframe3", qos);
-    pub_node_frame5_= create_publisher<nlink_parser_ros2_interfaces::msg::LinktrackNodeframe5>("nlink_linktrack_nodeframe5", qos);
-    pub_node_frame6_= create_publisher<nlink_parser_ros2_interfaces::msg::LinktrackNodeframe6>("nlink_linktrack_nodeframe6", qos);
+    pub_anchor_frame0_= create_publisher<anchorframe0>("nlink_linktrack_anchorframe0", qos);
+    pub_tag_frame0_= create_publisher<tagframe0>("nlink_linktrack_tagframe0", qos);
+    pub_node_frame0_= create_publisher<nodeframe0>("nlink_linktrack_nodeframe0", qos);
+    pub_node_frame1_= create_publisher<nodeframe1>("nlink_linktrack_nodeframe1", qos);
+    pub_node_frame2_= create_publisher<nodeframe2>("nlink_linktrack_nodeframe2", qos);
+    pub_node_frame3_= create_publisher<nodeframe3>("nlink_linktrack_nodeframe3", qos);
+    pub_node_frame5_= create_publisher<nodeframe5>("nlink_linktrack_nodeframe5", qos);
+    pub_node_frame6_= create_publisher<nodeframe6>("nlink_linktrack_nodeframe6", qos);
 
-    serial_read_timer_ =  this->create_wall_timer(std::chrono::milliseconds(1000), std::bind(&Init::serialReadTimer, this));
+    int pub_interval = (int)((1/(this->get_parameter("pub_freq").as_double()))*1000.);
+    std::cout<<pub_interval<<'\n';
+    serial_read_timer_ =  this->create_wall_timer(std::chrono::milliseconds(500), std::bind(&Init::serialReadTimer, this));
+    nodeframe_publisher_ =  this->create_wall_timer(std::chrono::milliseconds(pub_interval), std::bind(&Init::nodeFramePublisher, this));
     RCLCPP_INFO(this->get_logger(),"Initialized linktrack");
+  }
+
+  void Init::nodeFramePublisher(){
+    pub_anchor_frame0_->publish(this->buffer_msg_anchorframe0_);
+    pub_tag_frame0_->publish(this->buffer_msg_tagframe0_);
+    pub_node_frame0_->publish(this->buffer_msg_nodeframe0_);
+    pub_node_frame1_->publish(this->buffer_msg_nodeframe1_);
+    pub_node_frame2_->publish(this->buffer_msg_nodeframe2_);
+    pub_node_frame3_->publish(this->buffer_msg_nodeframe3_);
+    pub_node_frame5_->publish(this->buffer_msg_nodeframe5_);
+    pub_node_frame6_->publish(this->buffer_msg_nodeframe6_);
   }
 
   void Init::serialReadTimer(){
@@ -74,15 +89,7 @@ namespace linktrack
     auto protocol = new NLT_ProtocolAnchorFrame0;
     protocol_extraction->AddProtocol(protocol);
     protocol->SetHandleDataCallback([=] {
-      // if (!publishers_[protocol])
-      // {
-      //   auto topic = "nlink_linktrack_anchorframe0";
-      //   rclcpp::QoS qos(rclcpp::KeepLast(200));
-      //   publishers_[protocol] =
-      //       nh_.advertise<nlink_parser::LinktrackAnchorframe0>(topic, 200);
-      //       create_publisher<nlink_parser_ros2_interfaces::msg::LinktrackAnchorframe0>(topic, qos);
-      //   TopicAdvertisedTip(topic);
-      // }
+
       auto data = nlt_anchorframe0_.result;
       g_msg_anchorframe0.role = data.role;
       g_msg_anchorframe0.id = data.id;
@@ -101,8 +108,8 @@ namespace linktrack
         ARRAY_ASSIGN(msg_node.dis_arr, node->dis_arr)
         msg_nodes.push_back(msg_node);
       }
-      // publishers_.at(protocol)->publish(g_msg_anchorframe0);
-      pub_anchor_frame0_->publish(g_msg_anchorframe0);
+      // pub_anchor_frame0_->publish(g_msg_anchorframe0);
+      buffer_msg_anchorframe0_ = g_msg_anchorframe0;
     });
   }
 
@@ -111,14 +118,6 @@ namespace linktrack
     auto protocol = new NLT_ProtocolTagFrame0;
     protocol_extraction->AddProtocol(protocol);
     protocol->SetHandleDataCallback([=] {
-      // if (!publishers_[protocol])
-      // {
-      //   auto topic = "nlink_linktrack_tagframe0";
-      //   rclcpp::QoS qos(rclcpp::KeepLast(200));
-      //   publishers_[protocol] =
-      //     create_publisher<nlink_parser_ros2_interfaces::msg::LinktrackTagframe0>(topic, qos);
-      //   TopicAdvertisedTip(topic);
-      // }
 
       const auto &data = g_nlt_tagframe0.result;
       auto &msg_data = g_msg_tagframe0;
@@ -136,9 +135,8 @@ namespace linktrack
       ARRAY_ASSIGN(msg_data.imu_acc_3d, data.imu_acc_3d)
       ARRAY_ASSIGN(msg_data.angle_3d, data.angle_3d)
       ARRAY_ASSIGN(msg_data.quaternion, data.quaternion)
-
-      // publishers_.at(protocol)->publish(msg_data);
-      pub_tag_frame0_->publish(msg_data);
+      // pub_tag_frame0_->publish(msg_data);
+      buffer_msg_tagframe0_ = msg_data;
     });
   }
 
@@ -147,15 +145,7 @@ namespace linktrack
     auto protocol = new NLT_ProtocolNodeFrame0;
     protocol_extraction->AddProtocol(protocol);
     protocol->SetHandleDataCallback([=] {
-      // if (!publishers_[protocol])
-      // {
-      //   auto topic = "nlink_linktrack_nodeframe0";
-      //   rclcpp::QoS qos(rclcpp::KeepLast(200));
-      //   publishers_[protocol] =
-      //       create_publisher<nlink_parser_ros2_interfaces::msg::LinktrackNodeframe0>(topic, qos);
-      //   TopicAdvertisedTip(topic);
-      //   ;
-      // }
+
       const auto &data = g_nlt_nodeframe0.result;
       auto &msg_data = g_msg_nodeframe0;
       auto &msg_nodes = msg_data.nodes;
@@ -173,9 +163,8 @@ namespace linktrack
         msg_node.data.resize(node->data_length);
         memcpy(msg_node.data.data(), node->data, node->data_length);
       }
-
-      // publishers_.at(protocol)->publish(msg_data);
-      pub_node_frame0_->publish(msg_data);
+      // pub_node_frame0_->publish(msg_data);
+      buffer_msg_nodeframe0_ = msg_data;
     });
   }
 
@@ -184,14 +173,7 @@ namespace linktrack
     auto protocol = new NLT_ProtocolNodeFrame1;
     protocol_extraction->AddProtocol(protocol);
     protocol->SetHandleDataCallback([=] {
-      // if (!publishers_[protocol])
-      // {
-      //   auto topic = "nlink_linktrack_nodeframe1";
-      //   rclcpp::QoS qos(rclcpp::KeepLast(200));
-      //   publishers_[protocol] =
-      //       create_publisher<nlink_parser_ros2_interfaces::msg::LinktrackNodeframe1>(topic, qos);
-      //   TopicAdvertisedTip(topic);
-      // }
+
       const auto &data = g_nlt_nodeframe1.result;
       auto &msg_data = g_msg_nodeframe1;
       auto &msg_nodes = msg_data.nodes;
@@ -211,9 +193,8 @@ namespace linktrack
         msg_node.role = node->role;
         ARRAY_ASSIGN(msg_node.pos_3d, node->pos_3d)
       }
-
-      // publishers_.at(protocol)->publish(msg_data);
-      pub_node_frame1_->publish(msg_data);
+      // pub_node_frame1_->publish(msg_data);
+      buffer_msg_nodeframe1_ = msg_data;
     });
   }
 
@@ -222,14 +203,7 @@ namespace linktrack
     auto protocol = new NLT_ProtocolNodeFrame2;
     protocol_extraction->AddProtocol(protocol);
     protocol->SetHandleDataCallback([=] {
-      // if (!publishers_[protocol])
-      // {
-      //   auto topic = "nlink_linktrack_nodeframe2";
-      //   rclcpp::QoS qos(rclcpp::KeepLast(200));
-      //   publishers_[protocol] =
-      //       create_publisher<nlink_parser_ros2_interfaces::msg::LinktrackNodeframe2>(topic, qos);
-      //   TopicAdvertisedTip(topic);
-      // }
+
       const auto &data = g_nlt_nodeframe2.result;
       auto &msg_data = g_msg_nodeframe2;
       auto &msg_nodes = msg_data.nodes;
@@ -258,9 +232,8 @@ namespace linktrack
         msg_node.fp_rssi = node->fp_rssi;
         msg_node.rx_rssi = node->rx_rssi;
       }
-
-      // publishers_.at(protocol)->publish(msg_data);
-      pub_node_frame2_->publish(msg_data);
+      // pub_node_frame2_->publish(msg_data);
+      this->buffer_msg_nodeframe2_ = msg_data;
     });
   }
 
@@ -298,9 +271,8 @@ namespace linktrack
         msg_node.fp_rssi = node->fp_rssi;
         msg_node.rx_rssi = node->rx_rssi;
       }
-
-      // publishers_.at(protocol)->publish(msg_data);
-      pub_node_frame3_->publish(msg_data);
+      // pub_node_frame3_->publish(msg_data);
+      buffer_msg_nodeframe3_ = msg_data;
     });
   }
 
@@ -338,9 +310,8 @@ namespace linktrack
         msg_node.fp_rssi = node->fp_rssi;
         msg_node.rx_rssi = node->rx_rssi;
       }
-
-      // publishers_.at(protocol)->publish(msg_data);
-      pub_node_frame5_->publish(msg_data);
+      // pub_node_frame5_->publish(msg_data);
+      buffer_msg_nodeframe5_ = msg_data;
     });
   }
 
@@ -375,9 +346,8 @@ namespace linktrack
         msg_node.data.resize(node->data_length);
         memcpy(msg_node.data.data(), node->data, node->data_length);
       }
-
-      // publishers_.at(protocol)->publish(msg_data);
-      pub_node_frame6_->publish(msg_data);
+      // pub_node_frame6_->publish(msg_data);
+      buffer_msg_nodeframe6_ = msg_data;
     });
   }
 
