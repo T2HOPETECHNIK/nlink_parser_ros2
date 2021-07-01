@@ -47,7 +47,7 @@ namespace linktrack
     pub_node_frame6_= create_publisher<nodeframe6>("nlink_linktrack_nodeframe6", qos);
 
     int pub_interval = (int)((1/(this->get_parameter("pub_freq").as_double()))*1000.);
-    std::cout<<pub_interval<<'\n';
+    RCLCPP_INFO(this->get_logger(),"Param Publish frequency set to [%f]",pub_interval);
     serial_read_timer_ =  this->create_wall_timer(std::chrono::milliseconds(500), std::bind(&Init::serialReadTimer, this));
     nodeframe_publisher_ =  this->create_wall_timer(std::chrono::milliseconds(pub_interval), std::bind(&Init::nodeFramePublisher, this));
     RCLCPP_INFO(this->get_logger(),"Initialized linktrack");
@@ -227,6 +227,8 @@ namespace linktrack
         auto &msg_node = msg_nodes[i];
         auto node = data.nodes[i];
         msg_node.id = node->id;
+        // std::cout<<"node_id: "<<node->id<<'\n';
+        // RCLCPP_INFO(this->get_logger(),"node id : [%d]", node->id);
         msg_node.role = node->role;
         msg_node.dis = node->dis;
         msg_node.fp_rssi = node->fp_rssi;

@@ -151,21 +151,21 @@ ament_target_dependencies(nlink_viz_ros2
   "geometry_msgs"
 )
 
-set(NLINK_TO_R2R2 "nlink_to_r2r2")
-add_executable(${NLINK_TO_R2R2}
-    src/r2r2_msg_formatter.cpp
-    )
-target_link_libraries(${NLINK_TO_R2R2}
-    ${nutils}
-    )
+# set(NLINK_TO_R2R2 "nlink_to_r2r2")
+# add_executable(${NLINK_TO_R2R2}
+#     src/r2r2_msg_formatter.cpp
+#     )
+# target_link_libraries(${NLINK_TO_R2R2}
+#     ${nutils}
+#     )
 
-ament_target_dependencies(${NLINK_TO_R2R2}
-  "rclcpp"
-  "nlink_parser_ros2_interfaces"
-  "r2r2_jedi_force_sensor_interfaces"
-  "std_msgs"
-  "geometry_msgs"
-)
+# ament_target_dependencies(${NLINK_TO_R2R2}
+#   "rclcpp"
+#   "nlink_parser_ros2_interfaces"
+#   "r2r2_jedi_force_sensor_interfaces"
+#   "std_msgs"
+#   "geometry_msgs"
+# )
 
 #############
 ## Testing ##
@@ -191,7 +191,6 @@ install(TARGETS
 ${LINKTRACK_AOA_NAME} 
 ${LINKTRACK_NAME}
 nlink_viz_ros2
-${NLINK_TO_R2R2}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
@@ -200,7 +199,6 @@ install(
   TARGETS
   ${LINKTRACK_AOA_NAME} 
   ${LINKTRACK_NAME}
-  ${NLINK_TO_R2R2}
   nlink_viz_ros2
     DESTINATION lib/${PROJECT_NAME})
 
@@ -209,10 +207,6 @@ install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}
 )
 
-install(
-  DIRECTORY include/
-  DESTINATION include
-)
 
 ament_package()
 

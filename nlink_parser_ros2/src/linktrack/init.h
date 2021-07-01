@@ -63,6 +63,7 @@ namespace linktrack
     void initNodeFrame6(NProtocolExtracter *protocol_extraction);
 
     // std::unordered_map<NProtocolBase *, rclcpp::Publisher<nlink_parser_ros2_interfaces::msg::LinktrackNodeframe2>::SharedPtr> publishers_;
+    std::unordered_map<int, int> priority_mapping_;
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr dt_sub_;
     rclcpp::TimerBase::SharedPtr serial_read_timer_;
     rclcpp::TimerBase::SharedPtr nodeframe_publisher_;
