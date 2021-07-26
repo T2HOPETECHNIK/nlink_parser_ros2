@@ -1,4 +1,7 @@
 #include <math.h> 
+#include <chrono> 
+#include <ctime>
+
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -8,7 +11,7 @@
 #define PI 3.14159265
 
 using aoa_nodeframe = nlink_parser_ros2_interfaces::msg::LinktrackAoaNodeframe0;
-
+using namespace std::chrono_literals;
 class Listener : public rclcpp::Node
 {
 public:
@@ -18,29 +21,66 @@ public:
     
     setvbuf(stdout, NULL, _IONBF, BUFSIZ);
     auto clock = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
-    auto callback =
+
+    this->declare_parameter("node_ns", "linktrack_aoa");
+    this->declare_parameter("frame_id", "base_link");
+    this->declare_parameter("node_distance", .25);
+
+    auto callback_linktrack_node =
       [this, clock](const aoa_nodeframe::SharedPtr msg) -> void
       {
-        for(int i=0; i<msg->nodes.size();i++){
-          geometry_msgs::msg::PoseStamped poseStamped;
-          poseStamped.header.frame_id="/map";
-          poseStamped.header.stamp = clock->now();
+        if(msg->nodes.size()==0) return;
+        geometry_msgs::msg::PoseStamped poseStamped;
+        poseStamped.header.frame_id=this->get_parameter("frame_id").as_string();
+        poseStamped.header.stamp = clock->now();
 
-          poseStamped.pose.position.x = msg->nodes[i].dis * cos(msg->nodes[i].angle*PI/180);
-          poseStamped.pose.position.y = msg->nodes[i].dis * sin(msg->nodes[i].angle*PI/180);
-          this->globalGoalPoseStampedPub->publish(poseStamped);
+        auto dis = msg->nodes[0].dis;
+        auto angle = msg->nodes[0].angle;
+        float x_offset = 0;
+        // if(msg->nodes.size()>1 && msg->nodes[0].dis > msg->nodes[1].dis){
+        //   angle = 180-angle ;
+        //   dis = msg->nodes[0].angle;
+        //   x_offset = this->get_parameter("node_distance").as_double();
+        //   RCLCPP_INFO(this->get_logger(), "node 2");
+        // } else RCLCPP_INFO(this->get_logger(), "node 1");
+        if(msg->nodes.size()>1){
+          if (msg->nodes[0].dis > msg->nodes[1].dis){
+            angle = 180.-angle;
+            // x_offset = this->get_parameter("node_distance").as_double();
+            RCLCPP_INFO(this->get_logger(), "node 2");
+          } else {
+            RCLCPP_INFO(this->get_logger(), "node 1");
+          }
+        } else {
+          if(msg->nodes[0].id==1) {
+            angle = 180.-angle;
+            // x_offset = this->get_parameter("node_distance").as_double();
+            RCLCPP_INFO(this->get_logger(), "node 2 only");
+          } else {
+            RCLCPP_INFO(this->get_logger(), "node 1 only");
+          }
         }
-        RCLCPP_INFO(this->get_logger(), "I heard: something");
+        poseStamped.pose.position.x = dis * cos(angle*PI/180);
+        poseStamped.pose.position.x -= x_offset;
+        poseStamped.pose.position.y = dis * sin(angle*PI/180);
+        this->globalGoalPoseStampedPub->publish(poseStamped);
+        
       };
-    
+
     rclcpp::QoS qos(rclcpp::KeepLast(10));
-    sub_ = create_subscription<aoa_nodeframe>("nlink_linktrack_aoa_nodeframe0", 10, callback);
-    globalGoalPoseStampedPub = create_publisher<geometry_msgs::msg::PoseStamped>("uwb_goal", qos);
+    //std::string topic = this->get_parameter("node_ns").as_string()+"/nlink_linktrack_aoa_nodeframe0"; 
+    std::string topic = "/nlink_linktrack_aoa_nodeframe0"; 
+    sub_linktrack_aoa_ = create_subscription<aoa_nodeframe>(topic, 10, callback_linktrack_node);
+
+    globalGoalPoseStampedPub = create_publisher<geometry_msgs::msg::PoseStamped>("global_goal", qos);
   }
 
 private:
-  rclcpp::Subscription<aoa_nodeframe>::SharedPtr sub_;
+  // float range_from_node1, range_from_node2, angle_from_node1, angle_from_node2;
+
+  rclcpp::Subscription<aoa_nodeframe>::SharedPtr sub_linktrack_aoa_;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr globalGoalPoseStampedPub;
+  rclcpp::TimerBase::SharedPtr pub_timer_;
 };
 
 int main(int argc, char **argv)

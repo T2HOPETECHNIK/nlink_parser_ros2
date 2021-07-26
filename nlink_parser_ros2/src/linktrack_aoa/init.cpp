@@ -35,10 +35,13 @@ namespace linktrack_aoa
   {
     g_serial = serial;
     protocol_extraction_ = protocol_extraction;
+
+    this->declare_parameter("pub_frequency",5.);
     initDataTransmission();
     initNodeFrame0(protocol_extraction);
     InitAoaNodeFrame0(protocol_extraction);
-    serial_read_timer_ =  this->create_wall_timer(std::chrono::milliseconds(1000), std::bind(&Init::serialReadTimer, this));
+    float pub_interval = 1000./this->get_parameter("pub_frequency").as_double();
+    serial_read_timer_ =  this->create_wall_timer(std::chrono::milliseconds((int)pub_interval), std::bind(&Init::serialReadTimer, this));
     RCLCPP_INFO(this->get_logger(),"Initialized linktrack AoA");
   }
 
@@ -55,8 +58,9 @@ namespace linktrack_aoa
   void Init::initDataTransmission()
   {
     auto callback = [this](const std_msgs::msg::String::SharedPtr msg) -> void {
-    if (this->g_serial)
-      this->g_serial->write(msg->data);
+      if (this->g_serial){
+        this->g_serial->write(msg->data);
+      }
     };
     dt_sub_ =
         create_subscription<std_msgs::msg::String>("nlink_linktrack_data_transmission", 1000, callback);
@@ -73,7 +77,6 @@ namespace linktrack_aoa
         rclcpp::QoS qos(rclcpp::KeepLast(200));
         publishers_[protocol] =
             create_publisher<nlink_parser_ros2_interfaces::msg::LinktrackNodeframe0>(topic, qos);
-        TopicAdvertisedTip(topic);
       }
       const auto &data = g_nlt_nodeframe0.result;
       auto &msg_data = g_msg_nodeframe0;
@@ -108,7 +111,6 @@ namespace linktrack_aoa
         rclcpp::QoS qos(rclcpp::KeepLast(200));
         publishers_aoa_[protocol] =
             create_publisher<nlink_parser_ros2_interfaces::msg::LinktrackAoaNodeframe0>(topic, qos);
-        TopicAdvertisedTip(topic);
       }
       const auto &data = g_nltaoa_nodeframe0.result;
       auto &msg_data = g_msg_aoa_nodeframe0;
@@ -132,7 +134,6 @@ namespace linktrack_aoa
         msg_node.fp_rssi = node->fp_rssi;
         msg_node.rx_rssi = node->rx_rssi;
       }
-
       publishers_aoa_.at(protocol)->publish(msg_data);
     });
   }

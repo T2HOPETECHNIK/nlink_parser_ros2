@@ -151,6 +151,20 @@ ament_target_dependencies(nlink_viz_ros2
   "geometry_msgs"
 )
 
+add_executable(nlink_viz_single_ros2
+    src/target_single.cpp
+    )
+target_link_libraries(nlink_viz_single_ros2
+    ${nutils}
+    )
+
+ament_target_dependencies(nlink_viz_single_ros2
+  "rclcpp"
+  "nlink_parser_ros2_interfaces"
+  "std_msgs"
+  "geometry_msgs"
+)
+
 # set(NLINK_TO_R2R2 "nlink_to_r2r2")
 # add_executable(${NLINK_TO_R2R2}
 #     src/r2r2_msg_formatter.cpp
@@ -191,6 +205,7 @@ install(TARGETS
 ${LINKTRACK_AOA_NAME} 
 ${LINKTRACK_NAME}
 nlink_viz_ros2
+nlink_viz_single_ros2
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
@@ -200,10 +215,11 @@ install(
   ${LINKTRACK_AOA_NAME} 
   ${LINKTRACK_NAME}
   nlink_viz_ros2
+  nlink_viz_single_ros2
     DESTINATION lib/${PROJECT_NAME})
 
 
-install(DIRECTORY launch
+install(DIRECTORY launch params
   DESTINATION share/${PROJECT_NAME}
 )
 
