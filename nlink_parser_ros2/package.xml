@@ -18,11 +18,13 @@
   <build_depend>std_msgs</build_depend>
   <build_depend>rclcpp</build_depend>
   <build_depend>nlink_parser_ros2_interfaces</build_depend>
+  <build_depend>r2r2_jedi_force_sensor_interfaces</build_depend>
   <build_depend>serial</build_depend>
  
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>rclcpp</exec_depend>
   <exec_depend>nlink_parser_ros2_interfaces</exec_depend>
+  <exec_depend>r2r2_jedi_force_sensor_interfaces</exec_depend>
   <exec_depend>serial</exec_depend>
 
   <export>

@@ -111,6 +111,10 @@ void NProtocolExtracter::AddNewData(const std::string &data)
 
   for (const auto &sort_info : sort_infos)
   {
+  // hack to just get the last recieved dist calculation, ignoring all previous unread ones
+  // for (int i=sort_infos.size()-1; i<sort_infos.size(); i++)
+  // {
+    // auto &sort_info = sort_infos[i];
     auto header_index = sort_info.header_index;
     if (header_index < index_begin)
       continue;
