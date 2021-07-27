@@ -10,7 +10,6 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nlink_parser_ros2_interfaces REQUIRED)
-find_package(r2r2_jedi_force_sensor_interfaces REQUIRED)
 find_package(serial REQUIRED)
 find_package(yaml-cpp REQUIRED)
 

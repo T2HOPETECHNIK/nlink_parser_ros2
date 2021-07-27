@@ -23,7 +23,7 @@ namespace linktrack
 
   Init::Init(NProtocolExtracter *protocol_extraction, serial::Serial *serial) : Node("linktrack_ros2")
   {
-    this->declare_parameter("pub_freq", 2.);
+    this->declare_parameter("linktrack_publish_interval", 2.);
     serial_ = serial;
     protocol_extraction_ = protocol_extraction;
     initDataTransmission();
@@ -45,9 +45,9 @@ namespace linktrack
     pub_node_frame3_= create_publisher<nodeframe3>("nlink_linktrack_nodeframe3", qos);
     pub_node_frame5_= create_publisher<nodeframe5>("nlink_linktrack_nodeframe5", qos);
     pub_node_frame6_= create_publisher<nodeframe6>("nlink_linktrack_nodeframe6", qos);
-
-    int pub_interval = (int)((1/(this->get_parameter("pub_freq").as_double()))*1000.);
-    RCLCPP_INFO(this->get_logger(),"Param Publish frequency set to [%f]",pub_interval);
+    std::cout<<"here"<<1000.*this->get_parameter("linktrack_publish_interval").as_double()<<std::endl;
+    int pub_interval = (int)(1000.*(this->get_parameter("linktrack_publish_interval").as_double()));
+    RCLCPP_INFO(this->get_logger(),"Parameter [linktrack_publish_interval] set to [%d] milliseconds",pub_interval);
     serial_read_timer_ =  this->create_wall_timer(std::chrono::milliseconds(500), std::bind(&Init::serialReadTimer, this));
     nodeframe_publisher_ =  this->create_wall_timer(std::chrono::milliseconds(pub_interval), std::bind(&Init::nodeFramePublisher, this));
     RCLCPP_INFO(this->get_logger(),"Initialized linktrack");
